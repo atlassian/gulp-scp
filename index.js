@@ -26,39 +26,24 @@ module.exports = function (options) {
     return through.obj(function (file, enc, cb) {
 
         if (file.isStream()) {
-            this.emit('error', new gutil.PluginError('gulp-scp', 'Streaming not supported'));
-            return cb();
-        }
-
-        //Folder mode does not allow files
-        if (!options.folder && file.isNull()) {
-            this.push(file);
-            return cb();
-        }
-
-        //Folder only allows 1 path
-        if(options.folder && files.length){
-            return cb();
+            return cb(new gutil.PluginError('gulp-scp', 'Streaming not supported'));
         }
 
         this.push(file);
         files.push(file.path);
-        return cb();
-    }, function (cb) {
+        
         if (files.length > 0) {
             options.file = files.join(' ');
             scp.send(options, function(err){
-                if(err) {
-                    gutil.log('gulp-scp:', gutil.colors.red(err));
-                } else {
-                    gutil.log('gulp-scp:', gutil.colors.green(files.length, files.length === 1 ? 'file' : 'files', 'transferred successfully'));
-                }
+                if(err) return cb(err);
+                gutil.log('gulp-scp:', gutil.colors.green(files.length, files.length === 1 ? 'file' : 'files', 'transferred successfully'));
                 cb();
             });
         } else {
             gutil.log('gulp-scp:', gutil.colors.green('No files transferred'));
             cb();
         }
-
+    }, function (cb) {
+        cb();
     });
 };
